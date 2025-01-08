@@ -1,3 +1,20 @@
+/*
+ * k-Means clustering algorithm
+ *
+ * pthread version.
+ *
+ * Parallel computing (Degree in Computer Engineering)
+ * 2022/2023
+ *
+ * Version: 1.0
+ *
+ * (c) 2022 Diego García-Álvarez, Arturo Gonzalez-Escribano
+ * Grupo Trasgo, Universidad de Valladolid (Spain)
+ *
+ * This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License.
+ * https://creativecommons.org/licenses/by-sa/4.0/
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
