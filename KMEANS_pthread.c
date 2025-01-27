@@ -149,25 +149,24 @@ void zeroIntArray(int *array, int size) {
 }
 
 typedef struct {
-    int thread_id;              // ID del thread
-    int start;                  // Indice di inizio dei punti assegnati al thread
-    int end;                    // Indice di fine dei punti assegnati al thread
-    int lines;                  // Numero totale di punti
-    int samples;                // Numero di dimensioni (attributi) di ciascun punto
-    int K;                      // Numero di cluster
-    float *data;                // Puntatore ai dati (punti)
-    float *centroids;           // Puntatore ai centroidi
-    int *classMap;              // Puntatore alla mappa dei cluster
-    int *pointsPerClass;        // Puntatore al numero di punti per cluster (locale)
-    float *auxCentroids;        // Puntatore alle somme parziali per aggiornare i centroidi (locale)
+    int thread_id;
+    int start;
+    int end;
+    int lines;
+    int samples;
+    int K;
+    float *data;
+    float *centroids;
+    int *classMap;
+    int *pointsPerClass;
+    float *auxCentroids;
 } ThreadData;
 
-void *assign_points(void *arg) {
+void *assignPoints(void *arg) {
     ThreadData *t_data = (ThreadData *)arg;
     int i, j, class;
     float dist, minDist;
 
-    // Inizializza le strutture dati locali
     int *local_pointsPerClass = (int *)calloc(t_data->K, sizeof(int));
     float *local_auxCentroids = (float *)calloc(t_data->K * t_data->samples, sizeof(float));
 
@@ -185,14 +184,12 @@ void *assign_points(void *arg) {
 
         t_data->classMap[i] = class;
 
-        // Aggiorna le strutture dati locali
         local_pointsPerClass[class - 1]++;
         for (j = 0; j < t_data->samples; j++) {
             local_auxCentroids[(class - 1) * t_data->samples + j] += t_data->data[i * t_data->samples + j];
         }
     }
 
-    // Copia i risultati locali nelle strutture dati globali
     for (i = 0; i < t_data->K; i++) {
         t_data->pointsPerClass[i] += local_pointsPerClass[i];
         for (j = 0; j < t_data->samples; j++) {
@@ -207,12 +204,17 @@ void *assign_points(void *arg) {
 }
 
 int main(int argc, char *argv[]) {
+
     if(argc !=  7) {
         fprintf(stderr,"EXECUTION ERROR K-MEANS: Parameters are not correct.\n");
         fprintf(stderr,"./KMEANS [Input Filename] [Number of clusters] [Number of iterations] [Number of changes] [Threshold] [Output data file]\n");
         fflush(stderr);
         exit(EXIT_FAILURE);
     }
+
+    clock_t start_time, end_time;
+    double comp_time;
+    start_time = clock();
     
     int lines = 0, samples = 0;  
     int error = readInput(argv[1], &lines, &samples);
@@ -253,6 +255,7 @@ int main(int argc, char *argv[]) {
     }
 
     initCentroids(data, centroids, centroidPos, samples, K);
+
     printf("\n\tData file: %s \n\tPoints: %d\n\tDimensions: %d\n", argv[1], lines, samples);
     printf("\tNumber of clusters: %d\n", K);
     printf("\tMaximum number of iterations: %d\n", maxIterations);
@@ -299,7 +302,7 @@ int main(int argc, char *argv[]) {
         }
 
         for (int i = 0; i < THREADS; i++) {
-            pthread_create(&threads[i], NULL, assign_points, (void *)&thread_data[i]);
+            pthread_create(&threads[i], NULL, assignPoints, (void *)&thread_data[i]);
         }
 
         for (int i = 0; i < THREADS; i++) {
@@ -338,6 +341,10 @@ int main(int argc, char *argv[]) {
         showFileError(error, argv[6]);
         exit(EXIT_FAILURE);
     }
+
+    end_time = clock();
+    comp_time = ((double)(end_time - start_time)) / CLOCKS_PER_SEC;
+    printf("exec in %f.\n", comp_time);
 
     free(data);
     free(centroidPos);
