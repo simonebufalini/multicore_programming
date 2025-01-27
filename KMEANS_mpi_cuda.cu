@@ -1,4 +1,4 @@
-%%writefile kmeans_mpi_cuda.cu
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
@@ -9,7 +9,6 @@
 #include <time.h>
 
 #define MAXLINE 2000
-#define MAXCAD 200
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
@@ -156,6 +155,9 @@ int main(int argc, char *argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
+    clock_t start_time, end_time;
+    double comp_time;
+
     if (argc != 7) {
         if (rank == 0) {
             fprintf(stderr, "Usage: mpirun -np <num_processes> %s <input_file> <num_clusters> <max_iterations> <min_changes> <threshold> <output_file>\n", argv[0]);
@@ -187,6 +189,8 @@ int main(int argc, char *argv[]) {
     }
 
     if (rank == 0) {
+
+        start_time = clock();
         int error = readInput(inputFile, &lines, &samples);
         if (error != 0) {
             showFileError(error, inputFile);
@@ -398,6 +402,10 @@ int main(int argc, char *argv[]) {
         free(data);
         free(centroids);
         free(clusterMap);
+
+        end_time = clock();
+        comp_time = ((double)(end-start)) / CLOCKS_PER_SEC;
+        printf("exec time: %f.\n", comp_time);
     }
 
     MPI_Finalize();
